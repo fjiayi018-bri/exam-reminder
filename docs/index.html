@@ -1,247 +1,178 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>我的提醒</title>
-    <style>
-        :root {
-            --primary: #6366f1;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #1e293b;
-            --text-light: #64748b;
-            --border: #e2e8f0;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            padding: 16px;
-            padding-bottom: 80px;
-            min-height: 100vh;
-        }
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h1 { font-size: 22px; font-weight: 700; color: var(--primary); }
-        .header p { font-size: 12px; color: var(--text-light); margin-top: 4px; }
-        
-        .card {
-            background: var(--card);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            border: 1px solid var(--border);
-        }
-        
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-light); margin-bottom: 6px; }
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            font-size: 15px;
-            outline: none;
-            transition: border 0.2s;
-            background: #f8fafc;
-        }
-        .form-group input:focus { border-color: var(--primary); background: #fff; }
-        
-        .btn {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 12px;
-            background: var(--primary);
-            color: white;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
-        }
-        .btn:active { transform: scale(0.98); opacity: 0.9; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
-        .list-header h2 { font-size: 16px; font-weight: 600; }
-        .refresh-btn { background: none; border: none; color: var(--primary); font-size: 13px; font-weight: 600; cursor: pointer; }
-        
-        .todo-item {
-            display: flex;
-            align-items: flex-start;
-            padding: 14px;
-            border-bottom: 1px solid var(--border);
-        }
-        .todo-item:last-child { border-bottom: none; }
-        .todo-icon { margin-right: 12px; font-size: 18px; margin-top: 2px; }
-        .todo-content { flex: 1; }
-        .todo-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; word-break: break-all; }
-        .todo-date { font-size: 12px; color: var(--text-light); }
-        .todo-date.urgent { color: #ef4444; font-weight: 600; }
-        
-        .empty-state { text-align: center; padding: 30px 0; color: var(--text-light); font-size: 14px; }
-        
-        .toast {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
-            background: #1e293b; color: #fff; padding: 12px 24px; border-radius: 30px;
-            font-size: 14px; opacity: 0; transition: all 0.3s; z-index: 100; white-space: nowrap;
-        }
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>我的提醒</title>
+<style>
+:root{--primary:#6366f1;--bg:#f1f5f9;--card:#fff;--text:#1e293b;--text-light:#64748b;--border:#e2e8f0;--exam-bg:#e0e7ff;--exam-text:#4338ca}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);padding:16px;padding-bottom:80px}
+.header{text-align:center;margin-bottom:16px}
+.header h1{font-size:22px;font-weight:700;color:var(--primary)}
+.header p{font-size:12px;color:var(--text-light);margin-top:4px}
+.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,.05)}
+.card-title{font-size:14px;font-weight:600;color:var(--text-light);margin-bottom:10px}
+.exam-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+.exam-btn{padding:12px 4px;border-radius:10px;border:none;background:var(--exam-bg);color:var(--exam-text);font-size:13px;font-weight:600;cursor:pointer}
+.exam-btn:active{transform:scale(.95)}
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:13px;font-weight:600;color:var(--text-light);margin-bottom:6px}
+.form-group input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);font-size:15px;outline:none;background:#f8fafc}
+.form-group input:focus{border-color:var(--primary);background:#fff}
+.btn{width:100%;padding:14px;border:none;border-radius:12px;background:var(--primary);color:#fff;font-size:16px;font-weight:600;cursor:pointer}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.5}
+.list-header{display:flex;justify-content:space-between;align-items:center;margin:16px 0 10px;padding:0 4px}
+.list-header h2{font-size:16px;font-weight:600}
+.refresh-btn{background:none;border:none;color:var(--primary);font-size:13px;font-weight:600;cursor:pointer}
+.todo-item{display:flex;align-items:flex-start;padding:14px;border-bottom:1px solid var(--border)}
+.todo-item:last-child{border-bottom:none}
+.todo-icon{margin-right:12px;font-size:18px;margin-top:2px}
+.todo-content{flex:1}
+.todo-title{font-size:15px;font-weight:500;margin-bottom:4px;word-break:break-all}
+.todo-date{font-size:12px;color:var(--text-light)}
+.todo-date.urgent{color:#ef4444;font-weight:600}
+.empty-state{text-align:center;padding:20px 0;color:var(--text-light);font-size:14px}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:#1e293b;color:#fff;padding:12px 24px;border-radius:30px;font-size:14px;opacity:0;transition:all .3s;z-index:100;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+</style>
 </head>
 <body>
+<div class="header">
+<h1>📋 我的提醒</h1>
+<p>选择考试自动生成时间线，或手动添加待办</p>
+</div>
 
-    <div class="header">
-        <h1>📋 我的提醒</h1>
-        <p>数据每小时同步一次，添加后请耐心等待</p>
-    </div>
+<div class="card">
+<div class="card-title">📚 考试快捷添加</div>
+<div class="exam-grid" id="examGrid"></div>
+</div>
 
-    <div class="card">
-        <div class="form-group">
-            <label>要做什么事？</label>
-            <input type="text" id="todoTitle" placeholder="例如：去拿快递、交实验报告" autocomplete="off">
-        </div>
-        <div class="form-group">
-            <label>截止日期</label>
-            <input type="date" id="todoDate">
-        </div>
-        <div class="form-group">
-            <label>截止时间</label>
-            <input type="time" id="todoTime" value="18:00">
-        </div>
-        <button class="btn" id="saveBtn" onclick="saveTodo()">保存待办</button>
-    </div>
+<div class="card">
+<div class="form-group">
+<label>要做什么事？</label>
+<input type="text" id="todoTitle" placeholder="例如：去拿快递、交实验报告" autocomplete="off">
+</div>
+<div class="form-group">
+<label>截止日期</label>
+<input type="date" id="todoDate">
+</div>
+<div class="form-group">
+<label>截止时间</label>
+<input type="time" id="todoTime" value="18:00">
+</div>
+<button class="btn" id="saveBtn" onclick="saveTodo()">保存待办</button>
+</div>
 
-    <div class="list-header">
-        <h2>📌 待办列表</h2>
-        <button class="refresh-btn" onclick="loadTodos()">刷新 ↻</button>
-    </div>
+<div class="list-header">
+<h2>📌 待办列表</h2>
+<button class="refresh-btn" onclick="loadTodos()">刷新 ↻</button>
+</div>
+<div class="card" id="todoListCard">
+<div class="empty-state" id="emptyState">暂无待办，添加一个吧！</div>
+<div id="todoList"></div>
+</div>
 
-    <div class="card" id="todoListCard">
-        <div class="empty-state" id="emptyState">暂无待办，添加一个吧！</div>
-        <div id="todoList"></div>
-    </div>
+<div class="toast" id="toast">已发送！</div>
 
-    <div class="toast" id="toast">已发送！</div>
+<script>
+const NTFY_TOPIC='event-reminder-bree-1f7j2y';
+const GITHUB_USER='fjiayi018-bri';
+const REPO_NAME='exam-reminder';
+const BRANCH='main';
 
-    <script>
-        // 你的 ntfy 主题和 GitHub 仓库信息
-        const NTFY_TOPIC = 'event-reminder-bree-1f7j2y';
-        const GITHUB_USER = 'fjiayi018-bri';
-        const REPO_NAME = 'exam-reminder';
-        const BRANCH = 'main';
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('todoDate').value=new Date().toISOString().split('T')[0];
+  loadTodos();
+  loadExamOptions();
+});
 
-        // 页面加载时自动设置默认日期（今天）
-        document.addEventListener('DOMContentLoaded', () => {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('todoDate').value = today;
-            loadTodos();
-        });
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2500);
-        }
+async function loadExamOptions(){
+  const grid=document.getElementById('examGrid');
+  try{
+    const url=`https://cdn.jsdelivr.net/gh/${GITHUB_USER}/${REPO_NAME}@${BRANCH}/data/exams.json`;
+    const res=await fetch(url+'?t='+Date.now());
+    if(!res.ok)throw new Error('读取考试列表失败');
+    const exams=await res.json();
+    grid.innerHTML='';
+    exams.forEach(exam=>{
+      const btn=document.createElement('button');
+      btn.className='exam-btn';
+      btn.textContent=exam.name;
+      btn.onclick=()=>quickAddExam(exam);
+      grid.appendChild(btn);
+    });
+  }catch(e){
+    grid.innerHTML='<div class="empty-state">⚠️ 考试列表加载失败</div>';
+  }
+}
 
-        async function saveTodo() {
-            const title = document.getElementById('todoTitle').value.trim();
-            const date = document.getElementById('todoDate').value;
-            const time = document.getElementById('todoTime').value;
+async function quickAddExam(exam){
+  if(!confirm(`将「${exam.name}」的所有关键时间添加到待办？`))return;
+  let count=0;
+  for(const ev of exam.events){
+    const date=ev.date.slice(0,10);
+    const time=ev.date.slice(11,16)||'09:00';
+    const msg=`todo ${exam.name}·${ev.type} ${date} ${time}`;
+    await fetch(`https://ntfy.sh/${NTFY_TOPIC}`,{method:'POST',body:msg});
+    count++;
+  }
+  showToast(`✅ 已发送 ${count} 条指令，稍后同步`);
+  setTimeout(loadTodos,3000);
+}
 
-            if (!title) { showToast('请填写事项名称'); return; }
-            if (!date || !time) { showToast('请选择日期和时间'); return; }
+async function saveTodo(){
+  const title=document.getElementById('todoTitle').value.trim();
+  const date=document.getElementById('todoDate').value;
+  const time=document.getElementById('todoTime').value;
+  if(!title){showToast('请填写事项名称');return;}
+  if(!date||!time){showToast('请选择日期和时间');return;}
+  const btn=document.getElementById('saveBtn');
+  btn.disabled=true;btn.textContent='发送中...';
+  const message=`todo ${title} ${date} ${time}`;
+  try{
+    const res=await fetch(`https://ntfy.sh/${NTFY_TOPIC}`,{method:'POST',body:message});
+    if(res.ok){showToast('✅ 已发送指令，系统将在1小时内同步');document.getElementById('todoTitle').value='';setTimeout(loadTodos,2000);}
+    else showToast('❌ 发送失败');
+  }catch(e){showToast('❌ 网络错误');}
+  finally{btn.disabled=false;btn.textContent='保存待办';}
+}
 
-            const btn = document.getElementById('saveBtn');
-            btn.disabled = true;
-            btn.textContent = '发送中...';
-
-            // 拼接成 ntfy 需要的格式：todo 任务名称 2026-09-20 18:00
-            const message = `todo ${title} ${date} ${time}`;
-
-            try {
-                const res = await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
-                    method: 'POST',
-                    body: message,
-                    headers: { 'Content-Type': 'text/plain' }
-                });
-
-                if (res.ok) {
-                    showToast('✅ 已发送指令，系统将在1小时内同步');
-                    document.getElementById('todoTitle').value = '';
-                    // 延迟刷新列表
-                    setTimeout(loadTodos, 2000);
-                } else {
-                    showToast('❌ 发送失败，请检查网络');
-                }
-            } catch (e) {
-                showToast('❌ 网络错误，请检查网络');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '保存待办';
-            }
-        }
-
-        async function loadTodos() {
-            const listEl = document.getElementById('todoList');
-            const emptyEl = document.getElementById('emptyState');
-            
-            try {
-                // 使用 jsDelivr CDN 加速读取 GitHub 文件，国内访问更稳定
-                const url = `https://cdn.jsdelivr.net/gh/${GITHUB_USER}/${REPO_NAME}@${BRANCH}/data/todos.json`;
-                const res = await fetch(url + '?t=' + Date.now()); // 加时间戳防止缓存
-                if (!res.ok) throw new Error('获取失败');
-                
-                let todos = await res.json();
-                // 过滤掉已完成的
-                todos = todos.filter(t => !t.done);
-                
-                // 按截止时间排序
-                todos.sort((a, b) => new Date(a.due) - new Date(b.due));
-
-                listEl.innerHTML = '';
-                
-                if (todos.length === 0) {
-                    emptyEl.style.display = 'block';
-                } else {
-                    emptyEl.style.display = 'none';
-                    todos.forEach(todo => {
-                        const dueDate = new Date(todo.due);
-                        const now = new Date();
-                        const diffDays = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
-                        
-                        let dateClass = '';
-                        let dateText = todo.due.replace('T', ' ').slice(0, 16);
-                        
-                        if (diffDays < 0) {
-                            dateClass = 'urgent';
-                            dateText += ' (已过期)';
-                        } else if (diffDays <= 1) {
-                            dateClass = 'urgent';
-                            dateText += ' (紧急)';
-                        } else if (diffDays <= 3) {
-                            dateText += ` (剩${diffDays}天)`;
-                        }
-
-                        listEl.innerHTML += `
-                            <div class="todo-item">
-                                <div class="todo-icon">📌</div>
-                                <div class="todo-content">
-                                    <div class="todo-title">${todo.title}</div>
-                                    <div class="todo-date ${dateClass}">${dateText}</div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                }
-            } catch (e) {
-                console.error(e);
-                listEl.innerHTML = '<div class="empty-state">⚠️ 加载失败，请刷新重试</div>';
-            }
-        }
-    </script>
+async function loadTodos(){
+  const listEl=document.getElementById('todoList');
+  const emptyEl=document.getElementById('emptyState');
+  try{
+    const url=`https://cdn.jsdelivr.net/gh/${GITHUB_USER}/${REPO_NAME}@${BRANCH}/data/todos.json`;
+    const res=await fetch(url+'?t='+Date.now());
+    if(!res.ok)throw new Error('获取失败');
+    let todos=await res.json();
+    todos=todos.filter(t=>!t.done).sort((a,b)=>new Date(a.due)-new Date(b.due));
+    listEl.innerHTML='';
+    if(todos.length===0){emptyEl.style.display='block';}
+    else{
+      emptyEl.style.display='none';
+      todos.forEach(todo=>{
+        const dueDate=new Date(todo.due);
+        const diffDays=Math.ceil((dueDate-new Date())/(1000*60*60*24));
+        let dateClass='',dateText=todo.due.replace('T',' ').slice(0,16);
+        if(diffDays<0){dateClass='urgent';dateText+=' (已过期)';}
+        else if(diffDays<=1){dateClass='urgent';dateText+=' (紧急)';}
+        else if(diffDays<=3){dateText+=` (剩${diffDays}天)`;}
+        listEl.innerHTML+=`
+          <div class="todo-item">
+            <div class="todo-icon">📌</div>
+            <div class="todo-content">
+              <div class="todo-title">${todo.title}</div>
+              <div class="todo-date ${dateClass}">${dateText}</div>
+            </div>
+          </div>`;
+      });
+    }
+  }catch(e){listEl.innerHTML='<div class="empty-state">⚠️ 加载失败，请刷新重试</div>';}
+}
+</script>
 </body>
 </html>
