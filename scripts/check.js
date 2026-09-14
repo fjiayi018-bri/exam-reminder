@@ -9,42 +9,42 @@ if (!NTFY_TOPIC) {
 }
 
 const ROOT = path.join(__dirname, '..');
+const TODOS_PATH = path.join(ROOT, 'data/todos.json');
+const EXAMS_PATH = path.join(ROOT, 'data/exams.json');
 
-// 发送 ntfy 推送
-function push(title, message, priority = 3) {
+function push(title, message, priority = 3, tags = ['bell']) {
   return new Promise((resolve, reject) => {
-    const body = JSON.stringify({
-      topic: NTFY_TOPIC,
-      title,
-      message,
-      priority,           // 1=min 2=low 3=default 4=high 5=urgent
-      tags: ['bell']
-    });
+    const body = JSON.stringify({ topic: NTFY_TOPIC, title, message, priority, tags });
     const req = https.request({
-      hostname: 'ntfy.sh',
-      path: '/',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(body)
-      }
-    }, res => {
-      res.on('data', () => {});
-      res.on('end', () => resolve(res.statusCode));
-    });
+      hostname: 'ntfy.sh', path: '/', method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+    }, res => { res.on('data', () => {}); res.on('end', () => resolve(res.statusCode)); });
     req.on('error', reject);
     req.write(body);
     req.end();
   });
 }
 
-// 把时间转成北京时间当天日期字符串 YYYY-MM-DD
+function fetchNtfyMessages() {
+  return new Promise((resolve, reject) => {
+    https.get(`https://ntfy.sh/${NTFY_TOPIC}/json?poll=1&since=12h`, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        const messages = data.trim().split('\n').map(line => {
+          try { return JSON.parse(line); } catch(e) { return null; }
+        }).filter(m => m && m.event === 'message');
+        resolve(messages);
+      });
+    }).on('error', reject);
+  });
+}
+
 function beijingDate(d) {
   const t = new Date(d.getTime() + 8 * 3600 * 1000);
   return t.toISOString().slice(0, 10);
 }
 
-// 计算日期差（天），今天 0，明天 1，后天 2 ...
 function daysUntil(isoStr, now) {
   const target = new Date(isoStr);
   const t1 = new Date(beijingDate(target) + 'T00:00:00+08:00');
@@ -52,41 +52,57 @@ function daysUntil(isoStr, now) {
   return Math.round((t1 - t2) / 86400000);
 }
 
-async function main() {
-  const now = new Date();
-  const exams = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/exams.json'), 'utf8'));
-  const todos = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/todos.json'), 'utf8'));
+async function processIncomingMessages() {
+  const messages = await fetchNtfyMessages();
+  const todos = JSON.parse(fs.readFileSync(TODOS_PATH, 'utf8'));
+  let changed = false;
 
-  // 考试事件：提前 7 / 3 / 1 / 0 天提醒
+  for (const msg of messages) {
+    const text = (msg.message || '').trim();
+    if (!text.startsWith('todo ')) continue;
+
+    const match = text.match(/^todo\s+(.+?)\s+(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})$/i);
+    
+    if (match) {
+      const title = match[1].trim();
+      const due = `${match[2]}T${match[3]}:00+08:00`;
+      
+      const exists = todos.some(t => t.title === title && t.due === due);
+      if (!exists) {
+        todos.push({ id: `todo-${Date.now()}`, title: title, due: due, done: false });
+        changed = true;
+        await push('✅ 已添加待办', `${title}\n截止：${match[2]} ${match[3]}`, 3, ['white_check_mark']);
+      }
+    } else {
+      await push('❌ 格式错误', '请使用：todo 任务名称 2026-09-20 18:00', 3, ['warning']);
+    }
+  }
+
+  if (changed) {
+    fs.writeFileSync(TODOS_PATH, JSON.stringify(todos, null, 2));
+    console.log('todos.json 已更新');
+  }
+}
+
+async function main() {
+  await processIncomingMessages();
+  const now = new Date();
+  const exams = JSON.parse(fs.readFileSync(EXAMS_PATH, 'utf8'));
+  const todos = JSON.parse(fs.readFileSync(TODOS_PATH, 'utf8'));
+
   const TRIGGERS = [7, 3, 1, 0];
   for (const exam of exams) {
     for (const ev of exam.events) {
       const d = daysUntil(ev.date, now);
       if (!TRIGGERS.includes(d)) continue;
-
-      let priority = 3;
-      let title = '';
-      let msg = '';
-
-      if (d === 0) {
-        priority = 5;
-        title = `🔔 今天：${exam.name} · ${ev.type}`;
-        msg = ev.note || '就是今天，别忘了！';
-      } else if (d === 1) {
-        priority = 4;
-        title = `⏰ 明天：${exam.name} · ${ev.type}`;
-        msg = ev.note || '提前准备好材料';
-      } else {
-        title = `📅 ${d} 天后：${exam.name} · ${ev.type}`;
-        msg = `${ev.date.slice(0, 10)} ${ev.note || ''}`.trim();
-      }
-
+      let priority = 3, title = '', msg = '';
+      if (d === 0) { priority = 5; title = `🔔 今天：${exam.name} · ${ev.type}`; msg = ev.note || '就是今天，别忘了！'; }
+      else if (d === 1) { priority = 4; title = `⏰ 明天：${exam.name} · ${ev.type}`; msg = ev.note || '提前准备好材料'; }
+      else { title = `📅 ${d} 天后：${exam.name} · ${ev.type}`; msg = `${ev.date.slice(0, 10)} ${ev.note || ''}`.trim(); }
       await push(title, msg, priority);
-      console.log(`已推送：${title}`);
     }
   }
 
-  // 待办：今天或明天到期就提醒
   for (const todo of todos) {
     if (todo.done) continue;
     const d = daysUntil(todo.due, now);
@@ -94,12 +110,8 @@ async function main() {
       const priority = d === 0 ? 5 : 4;
       const title = d === 0 ? `📌 今天到期：${todo.title}` : `📌 明天到期：${todo.title}`;
       await push(title, `截止：${todo.due.slice(0, 16).replace('T', ' ')}`, priority);
-      console.log(`已推送：${title}`);
     }
   }
 }
 
-main().catch(err => {
-  console.error(err);
-  process.exit(1);
-});
+main().catch(err => { console.error(err); process.exit(1); });
