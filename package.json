@@ -1,0 +1,14 @@
+{
+  "name": "exam-reminder",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "check": "node scripts/check.js",
+    "gen-ics": "node scripts/gen-ics.js",
+    "fetch-exams": "node scripts/fetch-exams.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "cheerio": "^1.0.0"
+  }
+}
