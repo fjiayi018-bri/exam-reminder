@@ -22,6 +22,12 @@ jobs:
       - name: 更新考试时间数据
         run: node scripts/fetch-exams.js
 
+      - name: 安装依赖
+        run: npm install
+
+      - name: 自动抓取考试时间
+        run: node scripts/fetch-exams.js
+
       - name: 处理 ntfy 消息并检查提醒
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
